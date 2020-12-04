@@ -53,7 +53,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         {
             if (msg.message == WM_QUIT)
                 break;
-
+            
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
@@ -128,8 +128,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    if (g_dxgraphic.InitD3D(w, h))
    {
        g_dxgraphic.LoadSampleData(w, h);
+       g_dxInitialized = true;
    }
-   g_dxInitialized = true;
 
    return TRUE;
 }

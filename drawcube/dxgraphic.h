@@ -1,12 +1,10 @@
-#pragma once
+ï»¿#pragma once
 
 #include <vector>
 #include <fstream>
-#include <Shlwapi.h>
-#pragma comment(lib, "Shlwapi.lib")
 
 // C++17
-#include <filesystem>
+#include <string_view>
 
 // C++20
 #include <numbers>
@@ -15,9 +13,12 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
-
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "D3DCompiler.lib")
+
+// Win32APIã‚’ç”¨ã„ãŸãƒ‘ã‚¹ã®å–å¾—
+#include <Shlwapi.h>
+#pragma comment(lib, "Shlwapi.lib")
 
 // Comptr
 #include <atlcomcli.h>
@@ -27,15 +28,15 @@ namespace DXGraphic
 	class CDXGraphic
 	{
 	private:
-		HWND m_WindowHandle = NULL;
-		// ‹@”\ƒŒƒxƒ‹, ƒtƒH[ƒ}ƒbƒg
+		HWND m_WindowHandle = nullptr;
+		// æ©Ÿèƒ½ãƒ¬ãƒ™ãƒ«, ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆ
 		D3D_FEATURE_LEVEL featurelevel = D3D_FEATURE_LEVEL_11_0;
 		UINT swapchaincount = 1;
 		DXGI_FORMAT swapchainformat = DXGI_FORMAT_B8G8R8A8_UNORM;
 		DXGI_FORMAT depthstencilformat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		DXGI_SAMPLE_DESC sampledesc = { 1, 0 };
 
-		// ƒRƒA‚Æ‚È‚éˆ—‚ğs‚¤‚½‚ß‚Ì•Ï”
+		// ã‚³ã‚¢ã¨ãªã‚‹å‡¦ç†ã‚’è¡Œã†ãŸã‚ã®å¤‰æ•°
 		CComPtr<ID3D11Device> device;
 		CComPtr<ID3D11DeviceContext> context;
 		CComPtr<IDXGISwapChain> swapchain;
@@ -50,7 +51,7 @@ namespace DXGraphic
 		CComPtr<ID3D11PixelShader> pixelshader;
 		CComPtr<ID3D11InputLayout> inputlayout;
 
-		// ’è”ƒoƒbƒtƒ@
+		// å®šæ•°ãƒãƒƒãƒ•ã‚¡
 		CComPtr<ID3D11Buffer> matrixbuffer;
 
 		
@@ -59,16 +60,16 @@ namespace DXGraphic
 
 		UINT numindices = 0;
 
-		// DirectXZp—pƒ}ƒgƒŠƒbƒNƒX
+		// DirectXç®—è¡“ç”¨ãƒãƒˆãƒªãƒƒã‚¯ã‚¹
 		DirectX::XMMATRIX d3dworldmatrix = DirectX::XMMatrixIdentity();
 		DirectX::XMMATRIX d3dviewmatrix = DirectX::XMMatrixIdentity();
 		DirectX::XMMATRIX d3dprojmatrix = DirectX::XMMatrixIdentity();
 
-		// ƒJƒƒ‰ˆÊ’u, ’‹“_
+		// ã‚«ãƒ¡ãƒ©ä½ç½®, æ³¨è¦–ç‚¹
 		float m_cameraposition[3]{ 3.5f, 3.5f, 3.5f };
 		float m_lookatpoint[3]{ 0.0f, 0.0f, 0.0f };
 
-		// ƒJƒƒ‰‚Ìã•ûŒü‚ğ”½“]‚³‚¹‚éƒtƒ‰ƒO
+		// ã‚«ãƒ¡ãƒ©ã®ä¸Šæ–¹å‘ã‚’åè»¢ã•ã›ã‚‹ãƒ•ãƒ©ã‚°
 		bool m_camupset = false;
 
 		struct Vertex

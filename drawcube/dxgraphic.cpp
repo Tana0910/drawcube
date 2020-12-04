@@ -1,4 +1,4 @@
-#pragma once
+Ôªø#pragma once
 #include "DxGraphic.h"
 
 DXGraphic::CDXGraphic::CDXGraphic()
@@ -12,15 +12,14 @@ DXGraphic::CDXGraphic::~CDXGraphic()
 bool DXGraphic::CDXGraphic::CreateDeviceAndSwapChain(int w, int h)
 {
 	DXGI_SWAP_CHAIN_DESC desc = {
-		{ static_cast<UINT>(w), static_cast<UINT>(h),{ 60, 1 },
-		swapchainformat, DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED, DXGI_MODE_SCALING_UNSPECIFIED },
-		sampledesc,
-		DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT,
-		swapchaincount,
-		m_WindowHandle,
-		TRUE,
-		DXGI_SWAP_EFFECT_DISCARD,
-		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
+		.BufferDesc = { static_cast<UINT>(w), static_cast<UINT>(h), { 60, 1 }, swapchainformat, DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED, DXGI_MODE_SCALING_UNSPECIFIED },
+		.SampleDesc = sampledesc,
+		.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT,
+		.BufferCount = swapchaincount,
+		.OutputWindow = m_WindowHandle,
+		.Windowed = TRUE,
+		.SwapEffect = DXGI_SWAP_EFFECT_DISCARD,
+		.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
 	};
 
 	if (FAILED(D3D11CreateDeviceAndSwapChain(
@@ -76,9 +75,21 @@ bool DXGraphic::CDXGraphic::CreateDepthStencilState()
 {
 	D3D11_DEPTH_STENCIL_DESC desc =
 	{
-		TRUE, D3D11_DEPTH_WRITE_MASK_ALL, D3D11_COMPARISON_LESS,
-		FALSE, D3D11_DEFAULT_STENCIL_READ_MASK, D3D11_DEFAULT_STENCIL_WRITE_MASK,
-		D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP, D3D11_COMPARISON_ALWAYS
+		.DepthEnable = TRUE,
+		.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL,
+		.DepthFunc = D3D11_COMPARISON_LESS,
+		.StencilEnable = FALSE, 
+		.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+		.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+		.FrontFace = {
+			.StencilFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilPassOp = D3D11_STENCIL_OP_KEEP,
+			.StencilFunc = D3D11_COMPARISON_ALWAYS },
+		.BackFace = {.StencilFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilPassOp = D3D11_STENCIL_OP_KEEP,
+			.StencilFunc = D3D11_COMPARISON_ALWAYS}
 	};
 
 	if (FAILED(device->CreateDepthStencilState(&desc, &dss))) return false;
@@ -91,8 +102,14 @@ bool DXGraphic::CDXGraphic::CreateStencilBuffer(int w, int h)
 
 	D3D11_TEXTURE2D_DESC texdesc =
 	{
-		static_cast<UINT>(w), static_cast<UINT>(h), 1, 1,
-		DXGI_FORMAT_R24G8_TYPELESS, sampledesc, D3D11_USAGE_DEFAULT, D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE
+		.Width = static_cast<UINT>(w),
+		.Height = static_cast<UINT>(h),
+		.MipLevels = 1,
+		.ArraySize = 1,
+		.Format = DXGI_FORMAT_R24G8_TYPELESS,
+		.SampleDesc = sampledesc,
+		.Usage = D3D11_USAGE_DEFAULT,
+		.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE
 	};
 
 	if (FAILED(device->CreateTexture2D(&texdesc, nullptr, &depthtex))) return false;
@@ -100,7 +117,8 @@ bool DXGraphic::CDXGraphic::CreateStencilBuffer(int w, int h)
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC dsvdesc =
 	{
-		DXGI_FORMAT_D24_UNORM_S8_UINT, D3D11_DSV_DIMENSION_TEXTURE2D
+		.Format = DXGI_FORMAT_D24_UNORM_S8_UINT,
+		.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D
 	};
 
 	if (FAILED(device->CreateDepthStencilView(depthtex, &dsvdesc, &dsv))) return false;
@@ -110,19 +128,20 @@ bool DXGraphic::CDXGraphic::CreateStencilBuffer(int w, int h)
 
 bool DXGraphic::CDXGraphic::CreateShaderFromCompiledFiles()
 {
-	auto WideStr2MultiByte = [](const std::wstring wstr) -> std::string
+	// std::wstring_view „ÅßÊñáÂ≠óÂàó„ÅÆÂÖàÈ†≠„Éù„Ç§„É≥„Çø„Å®Èï∑„Åï„Å†„Åë„ÇíÊ∏°„Åô
+	auto WideStr2MultiByte = [](const std::wstring_view wstr) -> std::string
 	{
-		size_t size = ::WideCharToMultiByte(CP_OEMCP, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+		size_t size = ::WideCharToMultiByte(CP_OEMCP, 0, wstr.data(), -1, nullptr, 0, nullptr, nullptr);
 		std::vector<char> buf;
 		buf.resize(size);
-		::WideCharToMultiByte(CP_OEMCP, 0, wstr.c_str(), -1, &buf.front(), static_cast<int>(size), nullptr, nullptr);
+		::WideCharToMultiByte(CP_OEMCP, 0, wstr.data(), -1, &buf.front(), static_cast<int>(size), nullptr, nullptr);
 		std::string ret(&buf.front(), buf.size() - 1);
 		return ret;
 	};
 
 	std::wstring filepath;
 	filepath.resize(MAX_PATH);
-	::GetModuleFileName(NULL, &filepath.front(), MAX_PATH);
+	::GetModuleFileName(nullptr, &filepath.front(), MAX_PATH);
 	::PathRemoveFileSpec(&filepath.front());
 
 	// vertex shader
@@ -140,11 +159,27 @@ bool DXGraphic::CDXGraphic::CreateShaderFromCompiledFiles()
 	if (FAILED(device->CreateVertexShader(&csodata.front(), csosize, nullptr, &vertexshader.p)))
 		return false;
 
-	// ì¸óÕÇ∑ÇÈÉfÅ[É^ÇÃÉåÉCÉAÉEÉgÇíËã`
+	// ÂÖ•Âäõ„Åô„Çã„Éá„Éº„Çø„ÅÆ„É¨„Ç§„Ç¢„Ç¶„Éà„ÇíÂÆöÁæ©
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT , 0, sizeof(float) * 3, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ 
+			.SemanticName = "POSITION",
+			.SemanticIndex = 0,
+			.Format = DXGI_FORMAT_R32G32B32_FLOAT,
+			.InputSlot = 0,
+			.AlignedByteOffset = 0,
+			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
+			.InstanceDataStepRate = 0
+		},
+		{
+			.SemanticName = "COLOR",
+			.SemanticIndex = 0,
+			.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
+			.InputSlot = 0,
+			.AlignedByteOffset = sizeof(float) * 3,
+			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
+			.InstanceDataStepRate = 0 
+		}
 	};
 	UINT num = ARRAYSIZE(layout);
 
@@ -263,12 +298,19 @@ bool DXGraphic::CDXGraphic::InitD3D(int w, int h)
 		return false;
 	}
 
-	// ÉåÉìÉ_Å[É^Å[ÉQÉbÉgÇ…ê[ìx/ÉXÉeÉìÉVÉãÉeÉNÉXÉ`ÉÉÇê›íË
+	// „É¨„É≥„ÉÄ„Éº„Çø„Éº„Ç≤„ÉÉ„Éà„Å´Ê∑±Â∫¶/„Çπ„ÉÜ„É≥„Ç∑„É´„ÉÜ„ÇØ„Çπ„ÉÅ„É£„ÇíË®≠ÂÆö
 	context->OMSetRenderTargets(1, &rtv.p, dsv);
-	// ÉrÉÖÅ[É|Å[ÉgÇÃê›íË
+	// „Éì„É•„Éº„Éù„Éº„Éà„ÅÆË®≠ÂÆö
 	D3D11_VIEWPORT vp[] =
 	{
-		{ 0, 0, static_cast<FLOAT>(w), static_cast<FLOAT>(h), 0, 1.0f }
+		{ 
+			.TopLeftX = 0,
+			.TopLeftY = 0, 
+			.Width = static_cast<FLOAT>(w),
+			.Height = static_cast<FLOAT>(h),
+			.MinDepth = 0,
+			.MaxDepth = 1.0f
+		}
 	};
 	context->RSSetViewports(1, vp);
 
@@ -294,36 +336,36 @@ void DXGraphic::CDXGraphic::Render()
 
 	if (context == nullptr) return;
 
-	// ÉoÉbÉNÉoÉbÉtÉ@Ç∆ê[ìxÉoÉbÉtÉ@ÇÃÉNÉäÉA
+	// „Éê„ÉÉ„ÇØ„Éê„ÉÉ„Éï„Ç°„Å®Ê∑±Â∫¶„Éê„ÉÉ„Éï„Ç°„ÅÆ„ÇØ„É™„Ç¢
 	FLOAT backcolor[4] = { 1.f, 1.f, 1.f, 1.f };
 	context->ClearRenderTargetView(rtv, backcolor);
 	context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-	// í∏ì_ÉfÅ[É^Ç…ìnÇ∑ÉfÅ[É^ÇÃÉåÉCÉAÉEÉgÇê›íË
+	// È†ÇÁÇπ„Éá„Éº„Çø„Å´Ê∏°„Åô„Éá„Éº„Çø„ÅÆ„É¨„Ç§„Ç¢„Ç¶„Éà„ÇíË®≠ÂÆö
 	context->IASetInputLayout(inputlayout);
 
-	// í∏ì_ÉVÉFÅ[É_Å[, ÉWÉIÉÅÉgÉäÉVÉFÅ[É_Å[, ÉsÉNÉZÉãÉVÉFÅ[É_Å[ÇÃê›íË
+	// È†ÇÁÇπ„Ç∑„Çß„Éº„ÉÄ„Éº, „Ç∏„Ç™„É°„Éà„É™„Ç∑„Çß„Éº„ÉÄ„Éº, „Éî„ÇØ„Çª„É´„Ç∑„Çß„Éº„ÉÄ„Éº„ÅÆË®≠ÂÆö
 	context->VSSetShader(vertexshader, nullptr, 0);
 	context->GSSetShader(geometryshader, nullptr, 0);
 	context->PSSetShader(pixelshader, nullptr, 0);
 
-	// ÉâÉXÉ^ÉâÉCÉUÅ[ÉXÉeÅ[ÉgÇê›íË
+	// „É©„Çπ„Çø„É©„Ç§„Ç∂„Éº„Çπ„ÉÜ„Éº„Éà„ÇíË®≠ÂÆö
 	context->RSSetState(rs);
 
 	MatrixBuffer matrixbuf = {
-		// ÉVÉFÅ[É_Å[Ç≈ÇÕóÒóDêÊ(column_major)Ç≈çsóÒÉfÅ[É^Çï€éùÇ∑ÇÈÇΩÇﬂ, ì]íuÇçsÇ§
+		// „Ç∑„Çß„Éº„ÉÄ„Éº„Åß„ÅØÂàóÂÑ™ÂÖà(column_major)„ÅßË°åÂàó„Éá„Éº„Çø„Çí‰øùÊåÅ„Åô„Çã„Åü„ÇÅ, Ëª¢ÁΩÆ„ÇíË°å„ÅÜ
 		DirectX::XMMatrixTranspose(d3dprojmatrix),
 		DirectX::XMMatrixTranspose(d3dviewmatrix),
 		DirectX::XMMatrixTranspose(d3dworldmatrix)
 	};
 
-	// É}ÉgÉäÉbÉNÉXÉoÉbÉtÉ@ÇÃê›íË
+	// „Éû„Éà„É™„ÉÉ„ÇØ„Çπ„Éê„ÉÉ„Éï„Ç°„ÅÆË®≠ÂÆö
 	context->UpdateSubresource(matrixbuffer, 0, nullptr, &matrixbuf, 0, 0);
 	context->VSSetConstantBuffers(0, 1, &matrixbuffer.p);
 	context->GSSetConstantBuffers(0, 1, &matrixbuffer.p);
 
 
-	// ê[ìxÅEÉXÉeÉìÉVÉãÉoÉbÉtÉ@ÇÃégópï˚ñ@Çê›íË
+	// Ê∑±Â∫¶„Éª„Çπ„ÉÜ„É≥„Ç∑„É´„Éê„ÉÉ„Éï„Ç°„ÅÆ‰ΩøÁî®ÊñπÊ≥ï„ÇíË®≠ÂÆö
 	context->OMSetDepthStencilState(dss, 0);
 
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -331,7 +373,7 @@ void DXGraphic::CDXGraphic::Render()
 	context->IASetIndexBuffer(indexbuffer, DXGI_FORMAT_R32_UINT, 0);
 	context->DrawIndexed(numindices, 0, 0);
 
-	// çÏê¨ÇµÇΩÉvÉäÉ~ÉeÉBÉuÇÉEÉBÉìÉhÉEÇ÷ï`âÊ
+	// ‰ΩúÊàê„Åó„Åü„Éó„É™„Éü„ÉÜ„Ç£„Éñ„Çí„Ç¶„Ç£„É≥„Éâ„Ç¶„Å∏ÊèèÁîª
 	if (swapchain != nullptr)
 		swapchain->Present(0, 0);
 }
@@ -341,7 +383,7 @@ void DXGraphic::CDXGraphic::LoadSampleData(int w, int h)
 	float nearz = 1 / 1000.0f;
 	float farz = 10.0f;
 
-	d3dprojmatrix = DirectX::XMMatrixPerspectiveFovRH( std::numbers::pi_v<float> / 4.0f, 1.0f * w / h, nearz, farz);
+	d3dprojmatrix = DirectX::XMMatrixPerspectiveFovRH(std::numbers::pi_v<float> / 4.0f, 1.0f * w / h, nearz, farz);
 
 	float upsetz = m_camupset ? -1.0f : 1.0f;
 
@@ -377,9 +419,9 @@ void DXGraphic::CDXGraphic::LoadSampleData(int w, int h)
 	vertexbuffer.Release();
 	D3D11_BUFFER_DESC bdvertex =
 	{
-		static_cast<UINT>(sizeof(float) * vertexarray.size()),
-		D3D11_USAGE_DEFAULT,
-		D3D11_BIND_VERTEX_BUFFER
+		.ByteWidth = static_cast<UINT>(sizeof(float) * vertexarray.size()),
+		.Usage = D3D11_USAGE_DEFAULT,
+		.BindFlags = D3D11_BIND_VERTEX_BUFFER
 	};
 	D3D11_SUBRESOURCE_DATA srdv = { &vertexarray.front() };
 	device->CreateBuffer(&bdvertex, &srdv, &vertexbuffer.p);
@@ -387,9 +429,9 @@ void DXGraphic::CDXGraphic::LoadSampleData(int w, int h)
 	indexbuffer.Release();
 	D3D11_BUFFER_DESC bdindex =
 	{
-		static_cast<UINT>(sizeof(int) * indexarray.size()),
-		D3D11_USAGE_DEFAULT,
-		D3D11_BIND_INDEX_BUFFER
+		.ByteWidth = static_cast<UINT>(sizeof(int) * indexarray.size()),
+		.Usage = D3D11_USAGE_DEFAULT,
+		.BindFlags = D3D11_BIND_INDEX_BUFFER
 	};
 	D3D11_SUBRESOURCE_DATA srdind = { &indexarray.front() };
 	device->CreateBuffer(&bdindex, &srdind, &indexbuffer.p);
@@ -436,12 +478,19 @@ bool DXGraphic::CDXGraphic::ResizeView(int w, int h)
 		return false;
 	}
 
-	// ÉåÉìÉ_Å[É^Å[ÉQÉbÉgÇ…ê[ìx/ÉXÉeÉìÉVÉãÉeÉNÉXÉ`ÉÉÇê›íË
+	// „É¨„É≥„ÉÄ„Éº„Çø„Éº„Ç≤„ÉÉ„Éà„Å´Ê∑±Â∫¶/„Çπ„ÉÜ„É≥„Ç∑„É´„ÉÜ„ÇØ„Çπ„ÉÅ„É£„ÇíË®≠ÂÆö
 	context->OMSetRenderTargets(1, &rtv.p, dsv);
-	// ÉrÉÖÅ[É|Å[ÉgÇÃê›íË
+	// „Éì„É•„Éº„Éù„Éº„Éà„ÅÆË®≠ÂÆö
 	D3D11_VIEWPORT vp[] =
 	{
-		{ 0, 0, static_cast<FLOAT>(w), static_cast<FLOAT>(h), 0, 1.0f }
+		{
+			.TopLeftX = 0,
+			.TopLeftY = 0,
+			.Width = static_cast<FLOAT>(w),
+			.Height = static_cast<FLOAT>(h),
+			.MinDepth = 0,
+			.MaxDepth = 1.0f
+		}
 	};
 	context->RSSetViewports(1, vp);
 
