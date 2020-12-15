@@ -129,7 +129,7 @@ bool DXGraphic::CDXGraphic::CreateStencilBuffer(int w, int h)
 bool DXGraphic::CDXGraphic::CreateShaderFromCompiledFiles()
 {
 	// std::wstring_view で文字列の先頭ポインタと長さだけを渡す
-	auto WideStr2MultiByte = [](const std::wstring_view wstr) -> std::string
+	auto WideStr2MultiByte = [](std::wstring_view wstr) -> std::string
 	{
 		size_t size = ::WideCharToMultiByte(CP_OEMCP, 0, wstr.data(), -1, nullptr, 0, nullptr, nullptr);
 		std::vector<char> buf;
