@@ -128,20 +128,24 @@ bool DXGraphic::CDXGraphic::CreateStencilBuffer(int w, int h)
 
 bool DXGraphic::CDXGraphic::CreateShaderFromCompiledFiles()
 {
-	auto WideStr2MultiByte = [](const std::wstring& wstr) -> std::string
+	// std::wstring_view で文字列の先頭のポインタと長さだけを渡す
+	auto WideStr2MultiByte = [](std::wstring_view wstr) -> std::string
 	{
-		size_t size = ::WideCharToMultiByte(CP_OEMCP, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+		// wstr.data() はC文字列ではない(ヌル終端されていない)ので、第4引数には文字数を渡す
+		size_t size = ::WideCharToMultiByte(CP_OEMCP, 0, wstr.data(), wstr.size(), nullptr, 0, nullptr, nullptr);
 		std::vector<char> buf;
 		buf.resize(size);
-		::WideCharToMultiByte(CP_OEMCP, 0, wstr.c_str(), -1, &buf.front(), static_cast<int>(size), nullptr, nullptr);
-		std::string ret(&buf.front(), buf.size() - 1);
+		::WideCharToMultiByte(CP_OEMCP, 0, wstr.data(), wstr.size(), &buf.front(), static_cast<int>(size), nullptr, nullptr);
+		std::string ret(&buf.front(), buf.size());
 		return ret;
 	};
 
 	std::wstring filepath;
 	filepath.resize(MAX_PATH);
-	::GetModuleFileName(nullptr, &filepath.front(), MAX_PATH);
-	::PathRemoveFileSpec(&filepath.front());
+	::GetModuleFileName(nullptr, filepath.data(), MAX_PATH);
+	::PathRemoveFileSpec(filepath.data());
+	// ワイド文字列の長さ(終端のヌルを含まない文字数)にリサイズする
+	filepath.resize(wcslen(filepath.data()));
 
 	// vertex shader
 	std::string csofile = WideStr2MultiByte(filepath);
