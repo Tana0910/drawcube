@@ -133,10 +133,8 @@ bool DXGraphic::CDXGraphic::CreateShaderFromCompiledFiles()
 	{
 		// wstr.data() はC文字列ではない(ヌル終端されていない)ので、第4引数には文字数を渡す
 		size_t size = ::WideCharToMultiByte(CP_OEMCP, 0, wstr.data(), wstr.size(), nullptr, 0, nullptr, nullptr);
-		std::vector<char> buf;
-		buf.resize(size);
-		::WideCharToMultiByte(CP_OEMCP, 0, wstr.data(), wstr.size(), &buf.front(), static_cast<int>(size), nullptr, nullptr);
-		std::string ret(&buf.front(), buf.size());
+		std::string ret(size, char());
+		::WideCharToMultiByte(CP_OEMCP, 0, wstr.data(), wstr.size(), ret.data(), static_cast<int>(size), nullptr, nullptr);
 		return ret;
 	};
 
